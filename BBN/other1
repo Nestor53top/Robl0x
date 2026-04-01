@@ -3,15 +3,11 @@ local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
 
 local owners = {
-	"azlpro9995",
-	"azlpro9995",
-	"Passive_Xander"
+	"RedPulseOfficialSup"
 }
 
 local whitelist = {
-	"HenryCrystalRogue200",
-	"Supposed_cu99",
-	"bigjackey23"
+	"RedPulseOfficialSup"
 }
 
 local function inList(list, name)
