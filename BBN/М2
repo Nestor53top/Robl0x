@@ -1,0 +1,675 @@
+-- ═══════════════════════════════════════
+-- Celeron's GUI | Bite By Night
+-- Modern Dark-Red Theme
+-- ═══════════════════════════════════════
+
+local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nestor53top/Robl0x/refs/heads/main/BBN/lib"))()
+
+local win = ui:Create({
+    Name = "Celeron's GUI — Bite By Night",
+    StartupSound = "rbxassetid://6958727243",
+})
+
+-- ═══ TABS ═══
+local hometab = win:Tab("Home")
+local maintab = win:Tab("Main")
+local survivor = win:Tab("Survivor")
+local killer = win:Tab("Killer")
+local vistab = win:Tab("Visual")
+local tpstab = win:Tab("Teleport")
+local misctab = win:Tab("Others")
+local helptab = win:Tab("Info")
+
+-- ═══ SERVICES ═══
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local player = Players.LocalPlayer
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+local function notify(title, text, duration)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 2
+        })
+    end)
+end
+
+-- ═══════════════════════════════════════
+-- HOME TAB
+-- ═══════════════════════════════════════
+hometab:Label("Script Made By Celeron + Daffy")
+hometab:Label("Join Discord For Updates & Suggestions")
+hometab:Banner("172512879", math.random(1, 50) == 1 and 385 or 225)
+
+-- ═══════════════════════════════════════
+-- SAFETY PLATFORM
+-- ═══════════════════════════════════════
+local safetyPart = Instance.new("Part")
+safetyPart.Name = "SafetyPlatform"
+safetyPart.Size = Vector3.new(50, 2, 50)
+safetyPart.Position = Vector3.new(0, 1000, 0)
+safetyPart.Anchored = true
+safetyPart.CanCollide = true
+safetyPart.Material = Enum.Material.ForceField
+safetyPart.Color = Color3.fromRGB(200, 30, 30)
+safetyPart.Transparency = 0.3
+safetyPart.Parent = workspace
+
+-- ═══════════════════════════════════════
+-- MAIN TAB
+-- ═══════════════════════════════════════
+maintab:Label("Character Movement Features")
+
+-- Infinite Sprint
+local sprintConn
+maintab:Toggle("Infinite Sprint", "Sprint forever without stamina drain.", function(state)
+    if sprintConn then sprintConn:Disconnect(); sprintConn = nil end
+
+    if state then
+        sprintConn = RunService.Heartbeat:Connect(function()
+            local char = player.Character
+            if not char then return end
+
+            if isMobile then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.MoveDirection.Magnitude > 0 then
+                    char:SetAttribute("WalkSpeed", 24)
+                else
+                    char:SetAttribute("WalkSpeed", 12)
+                end
+            else
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
+                    char:SetAttribute("WalkSpeed", 25)
+                else
+                    char:SetAttribute("WalkSpeed", 12)
+                end
+            end
+        end)
+    else
+        local char = player.Character
+        if char then char:SetAttribute("WalkSpeed", 12) end
+    end
+    notify("Infinite Sprint", state and "Enabled" or "Disabled")
+end)
+
+-- Allow Jumping
+local jpLoop, jpCA
+maintab:Toggle("Allow Jumping", "Enables jumping ability.", function(state)
+    if jpLoop then jpLoop:Disconnect(); jpLoop = nil end
+    if jpCA then jpCA:Disconnect(); jpCA = nil end
+
+    if state then
+        local function applyJump()
+            local char = player.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if not hum then return end
+            if hum.UseJumpPower then hum.JumpPower = 1.5 else hum.JumpHeight = 1.5 end
+        end
+
+        applyJump()
+        local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            jpLoop = hum:GetPropertyChangedSignal("JumpPower"):Connect(applyJump)
+        end
+
+        jpCA = player.CharacterAdded:Connect(function(newChar)
+            local h = newChar:WaitForChild("Humanoid")
+            applyJump()
+            if jpLoop then jpLoop:Disconnect() end
+            jpLoop = h:GetPropertyChangedSignal("JumpPower"):Connect(applyJump)
+        end)
+    else
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                if hum.UseJumpPower then hum.JumpPower = 0 else hum.JumpHeight = 0 end
+            end
+        end
+    end
+    notify("Allow Jumping", state and "Enabled" or "Disabled")
+end)
+
+-- Flight
+local flying = false
+local flyConn
+maintab:Toggle("Flight", "Fly around the map freely.", function(state)
+    flying = state
+    if flyConn then flyConn:Disconnect(); flyConn = nil end
+
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not root or not hum then return end
+
+    if state then
+        hum.PlatformStand = true
+        root.Anchored = true
+
+        flyConn = RunService.RenderStepped:Connect(function(dt)
+            if not flying or not root or not root.Parent then return end
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = false end
+            end
+
+            local cam = workspace.CurrentCamera
+            local move = Vector3.zero
+            local speed = 125
+
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
+
+            if move.Magnitude > 0 then
+                root.CFrame = root.CFrame + (move.Unit * speed * dt)
+            end
+            root.CFrame = CFrame.new(root.Position, root.Position + cam.CFrame.LookVector)
+        end)
+    else
+        hum.PlatformStand = false
+        root.Anchored = false
+        for _, p in ipairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = true end
+        end
+    end
+    notify("Flight", state and "Enabled" or "Disabled")
+end)
+
+-- Noclip
+local noclipConn
+maintab:Toggle("Noclip", "Walk through walls and objects.", function(state)
+    if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
+
+    if state then
+        noclipConn = RunService.Stepped:Connect(function()
+            local char = player.Character
+            if not char then return end
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = false end
+            end
+        end)
+    else
+        local char = player.Character
+        if char then
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = true end
+            end
+        end
+    end
+    notify("Noclip", state and "Enabled" or "Disabled")
+end)
+
+-- Lock On
+local lockTarget, lockInput, lockRender
+maintab:Toggle("Lock On", "Lock camera onto closest player (M2).", function(state)
+    if lockInput then lockInput:Disconnect(); lockInput = nil end
+    if lockRender then lockRender:Disconnect(); lockRender = nil end
+    lockTarget = nil
+
+    if state then
+        lockInput = UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                if lockTarget then
+                    lockTarget = nil
+                else
+                    local char = player.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return end
+
+                    local closest, shortest = nil, math.huge
+                    for _, other in ipairs(Players:GetPlayers()) do
+                        if other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart") then
+                            local dist = (hrp.Position - other.Character.HumanoidRootPart.Position).Magnitude
+                            if dist < shortest then
+                                shortest = dist
+                                closest = other
+                            end
+                        end
+                    end
+                    if closest then lockTarget = closest.Character:FindFirstChild("HumanoidRootPart") end
+                end
+            end
+        end)
+
+        lockRender = RunService.RenderStepped:Connect(function()
+            if lockTarget then
+                workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, lockTarget.Position)
+            end
+        end)
+    end
+    notify("Lock On", state and "Enabled" or "Disabled")
+end)
+
+-- Full Bright
+local oldLighting = {}
+maintab:Toggle("Full Bright", "Maximum brightness and visibility.", function(state)
+    local lighting = game:GetService("Lighting")
+    if state then
+        oldLighting = {
+            Brightness = lighting.Brightness,
+            ClockTime = lighting.ClockTime,
+            FogEnd = lighting.FogEnd,
+            GlobalShadows = lighting.GlobalShadows,
+            Ambient = lighting.Ambient,
+        }
+        lighting.Brightness = 5
+        lighting.ClockTime = 14
+        lighting.FogEnd = 100000
+        lighting.GlobalShadows = false
+        lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    elseif next(oldLighting) then
+        for k, v in pairs(oldLighting) do lighting[k] = v end
+    end
+end)
+
+-- ═══════════════════════════════════════
+-- SURVIVOR TAB
+-- ═══════════════════════════════════════
+survivor:Label("Survivor Features")
+
+-- Auto Generator
+local genConn
+survivor:Toggle("Auto Generator", "Automatically complete generator tasks.", function(state)
+    if genConn then genConn:Disconnect(); genConn = nil end
+    if state then
+        genConn = RunService.RenderStepped:Connect(function()
+            local gen = player.PlayerGui:FindFirstChild("Gen")
+            if gen then gen.GeneratorMain.Event:FireServer(true) end
+        end)
+    end
+    notify("Auto Generator", state and "Enabled" or "Disabled")
+end)
+
+-- Auto Escape
+local autoEscapeConn
+survivor:Toggle("Auto Escape", "Auto-teleport to escape when available.", function(state)
+    if autoEscapeConn then autoEscapeConn:Disconnect(); autoEscapeConn = nil end
+
+    if state then
+        local teleported = false
+        autoEscapeConn = RunService.RenderStepped:Connect(function()
+            if teleported then return end
+            local char = player.Character
+            if not char or not workspace.GAME.CAN_ESCAPE.Value then return end
+            if char.Parent ~= workspace.PLAYERS.ALIVE then return end
+
+            local map = workspace.MAPS:FindFirstChild("GAME MAP")
+            if not map then return end
+            local escapes = map:FindFirstChild("Escapes")
+            if not escapes then return end
+
+            for _, part in pairs(escapes:GetChildren()) do
+                if part:IsA("BasePart") and part:GetAttribute("Enabled") then
+                    local hl = part:FindFirstChildOfClass("Highlight")
+                    if hl and hl.Enabled then
+                        local root = char:FindFirstChild("HumanoidRootPart")
+                        if root then
+                            teleported = true
+                            root.Anchored = true
+                            root.CFrame = part.CFrame
+                            task.delay(1.5, function() root.Anchored = false end)
+                            task.delay(10, function() teleported = false end)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    notify("Auto Escape", state and "Enabled" or "Disabled")
+end)
+
+-- Auto Barricade
+local barricadeConn
+survivor:Toggle("Auto Barricade", "Lock barricade dot to center.", function(state)
+    if barricadeConn then barricadeConn:Disconnect(); barricadeConn = nil end
+
+    if state then
+        barricadeConn = RunService.RenderStepped:Connect(function()
+            local dot = player.PlayerGui:FindFirstChild("Dot")
+            if dot and dot:IsA("ScreenGui") and dot.Enabled then
+                local container = dot:FindFirstChild("Container")
+                if container then
+                    local frame = container:FindFirstChild("Frame")
+                    if frame and frame:IsA("GuiObject") then
+                        frame.AnchorPoint = Vector2.new(0.5, 0.5)
+                        frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    end
+                end
+            end
+        end)
+    end
+    notify("Auto Barricade", state and "Enabled" or "Disabled")
+end)
+
+-- Safety Area
+local lastPosition
+survivor:Toggle("Safety Area", "Teleport to safe platform.", function(state)
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if state then
+        lastPosition = root.CFrame
+        root.CFrame = CFrame.new(0, 1003, 0)
+    elseif lastPosition then
+        root.CFrame = lastPosition
+        lastPosition = nil
+    end
+    notify("Safety Area", state and "Enabled" or "Disabled")
+end)
+
+-- View Killer
+local vkAddConn, vkRemConn
+survivor:Toggle("View Killer", "Spectate the killer's perspective.", function(state)
+    if vkAddConn then vkAddConn:Disconnect(); vkAddConn = nil end
+    if vkRemConn then vkRemConn:Disconnect(); vkRemConn = nil end
+
+    local camera = workspace.CurrentCamera
+    local killerFolder = workspace.PLAYERS:FindFirstChild("KILLER")
+
+    if state and killerFolder then
+        local function setKillerCam(killerChar)
+            local hum = killerChar:FindFirstChildOfClass("Humanoid")
+            if hum then camera.CameraSubject = hum end
+        end
+
+        local k = killerFolder:GetChildren()[1]
+        if k then setKillerCam(k) end
+
+        vkAddConn = killerFolder.ChildAdded:Connect(setKillerCam)
+        vkRemConn = killerFolder.ChildRemoved:Connect(function()
+            local char = player.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then camera.CameraSubject = hum end
+            end
+        end)
+    else
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then camera.CameraSubject = hum end
+        end
+    end
+    notify("View Killer", state and "Enabled" or "Disabled")
+end)
+
+-- Anti Death
+survivor:Label("Anti Death Features")
+
+local antiDeath = {
+    enabled = false, threshold = 30, conn = nil,
+    lastPos = nil, teleported = false, debounce = false
+}
+
+survivor:Toggle("Anti Death", "Auto-teleport to safety at low health.", function(state)
+    antiDeath.enabled = state
+    if antiDeath.conn then antiDeath.conn:Disconnect(); antiDeath.conn = nil end
+
+    if state then
+        antiDeath.conn = RunService.Heartbeat:Connect(function()
+            local char = player.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not hum or not root then return end
+
+            if hum.Health < antiDeath.threshold and hum.Health > 0 and not antiDeath.teleported and not antiDeath.debounce then
+                antiDeath.debounce = true
+                antiDeath.teleported = true
+                antiDeath.lastPos = root.CFrame
+                root.CFrame = safetyPart.CFrame + Vector3.new(0, 5, 0)
+                task.delay(1, function() antiDeath.debounce = false end)
+
+            elseif hum.Health >= antiDeath.threshold and antiDeath.teleported and antiDeath.lastPos and not antiDeath.debounce then
+                antiDeath.debounce = true
+                root.CFrame = antiDeath.lastPos
+                antiDeath.lastPos = nil
+                antiDeath.teleported = false
+                task.delay(1, function() antiDeath.debounce = false end)
+            end
+        end)
+    else
+        antiDeath.lastPos = nil
+        antiDeath.teleported = false
+        antiDeath.debounce = false
+    end
+    notify("Anti Death", state and "Enabled" or "Disabled")
+end)
+
+survivor:Slider("Health Threshold", 30, 25, 80, 0.5, function(v)
+    antiDeath.threshold = v
+end)
+
+-- ═══════════════════════════════════════
+-- KILLER TAB
+-- ═══════════════════════════════════════
+killer:Label("Killer Features")
+
+local tpKillConn
+local targetName = ""
+local killMode = "Closest"
+
+local function getAliveNames()
+    local t = {}
+    for _, v in ipairs(workspace.PLAYERS.ALIVE:GetChildren()) do
+        table.insert(t, v.Name)
+    end
+    return t
+end
+
+killer:Toggle("Teleport Kill", "Constantly teleport behind target.", function(state)
+    if tpKillConn then tpKillConn:Disconnect(); tpKillConn = nil end
+
+    if state then
+        tpKillConn = RunService.Heartbeat:Connect(function()
+            local char = player.Character
+            if not char then return end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            local targetChar
+            if killMode == "Closest" then
+                local closest, dist = nil, math.huge
+                for _, v in ipairs(workspace.PLAYERS.ALIVE:GetChildren()) do
+                    local hrp = v:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local d = (root.Position - hrp.Position).Magnitude
+                        if d < dist then dist = d; closest = v end
+                    end
+                end
+                targetChar = closest
+            elseif killMode == "Specific" then
+                targetChar = workspace.PLAYERS.ALIVE:FindFirstChild(targetName)
+            end
+
+            if targetChar then
+                local hrp = targetChar:FindFirstChild("HumanoidRootPart")
+                if hrp then root.CFrame = hrp.CFrame * CFrame.new(0, 0, 3) end
+            end
+        end)
+    end
+    notify("Teleport Kill", state and "Enabled" or "Disabled")
+end)
+
+killer:Textbox("Target Username", "Enter username to target.", function(v)
+    targetName = v
+end)
+
+killer:Dropdown("Target Mode", {"Closest", "Specific"}, "Select targeting method.", function(v)
+    killMode = v
+end)
+
+-- ═══════════════════════════════════════
+-- VISUAL TAB
+-- ═══════════════════════════════════════
+vistab:Label("ESP & Visual Features")
+
+local esp = {survivors = {}, killers = {}, generators = {}}
+
+local function newHL(obj, color)
+    if not obj then return end
+    local h = Instance.new("Highlight")
+    h.FillColor = color
+    h.FillTransparency = 0.5
+    h.OutlineColor = color
+    h.OutlineTransparency = 0
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Adornee = obj
+    h.Parent = obj
+    return h
+end
+
+local function espAdd(tbl, obj, color)
+    if obj and not tbl[obj] then tbl[obj] = newHL(obj, color) end
+end
+
+local function espRemove(tbl, obj)
+    if tbl[obj] then tbl[obj]:Destroy(); tbl[obj] = nil end
+end
+
+local function espClear(tbl)
+    for obj, h in pairs(tbl) do if h then h:Destroy() end; tbl[obj] = nil end
+end
+
+vistab:Toggle("Survivor ESP", "Highlight all alive survivors.", function(state)
+    local alive = workspace.PLAYERS.ALIVE
+    if esp.sAdd then esp.sAdd:Disconnect() end
+    if esp.sRem then esp.sRem:Disconnect() end
+    espClear(esp.survivors)
+
+    if state then
+        for _, v in ipairs(alive:GetChildren()) do
+            if v:IsA("Model") then espAdd(esp.survivors, v, Color3.fromRGB(80, 180, 255)) end
+        end
+        esp.sAdd = alive.ChildAdded:Connect(function(v)
+            if v:IsA("Model") then espAdd(esp.survivors, v, Color3.fromRGB(80, 180, 255)) end
+        end)
+        esp.sRem = alive.ChildRemoved:Connect(function(v) espRemove(esp.survivors, v) end)
+    end
+    notify("Survivor ESP", state and "Enabled" or "Disabled")
+end)
+
+vistab:Toggle("Killer ESP", "Highlight the killer in red.", function(state)
+    local killers = workspace.PLAYERS.KILLER
+    if esp.kAdd then esp.kAdd:Disconnect() end
+    if esp.kRem then esp.kRem:Disconnect() end
+    espClear(esp.killers)
+
+    if state then
+        for _, v in ipairs(killers:GetChildren()) do
+            if v:IsA("Model") then espAdd(esp.killers, v, Color3.fromRGB(255, 80, 80)) end
+        end
+        esp.kAdd = killers.ChildAdded:Connect(function(v)
+            if v:IsA("Model") then espAdd(esp.killers, v, Color3.fromRGB(255, 80, 80)) end
+        end)
+        esp.kRem = killers.ChildRemoved:Connect(function(v) espRemove(esp.killers, v) end)
+    end
+    notify("Killer ESP", state and "Enabled" or "Disabled")
+end)
+
+vistab:Toggle("Generator ESP", "Highlight all generators.", function(state)
+    if esp.gAdd then esp.gAdd:Disconnect() end
+    if esp.gRem then esp.gRem:Disconnect() end
+    espClear(esp.generators)
+
+    if state then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Model") and v.Name == "Generator" then
+                espAdd(esp.generators, v, Color3.fromRGB(0, 255, 100))
+            end
+        end
+        esp.gAdd = workspace.DescendantAdded:Connect(function(v)
+            if v:IsA("Model") and v.Name == "Generator" then
+                espAdd(esp.generators, v, Color3.fromRGB(0, 255, 100))
+            end
+        end)
+        esp.gRem = workspace.DescendantRemoving:Connect(function(v) espRemove(esp.generators, v) end)
+    end
+    notify("Generator ESP", state and "Enabled" or "Disabled")
+end)
+
+-- ═══════════════════════════════════════
+-- TELEPORT TAB
+-- ═══════════════════════════════════════
+tpstab:Label("Teleport Features")
+
+local generatorIndex = 1
+tpstab:Button("Generator TP", "Cycle through generators.", function()
+    local folder = workspace.MAPS["GAME MAP"].Generators
+    local models = {}
+    for _, v in ipairs(folder:GetChildren()) do
+        if v:IsA("Model") then table.insert(models, v) end
+    end
+    if #models == 0 then return end
+
+    local model = models[generatorIndex]
+    local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+    if part then
+        local char = player.Character
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.CFrame = CFrame.new(part.CFrame.Position + part.CFrame.LookVector * 5)
+            end
+        end
+    end
+    generatorIndex = generatorIndex % #models + 1
+end)
+
+local batteryIndex = 1
+tpstab:Button("Battery TP", "Cycle through batteries.", function()
+    local batteries = {}
+    local ignore = workspace:FindFirstChild("IGNORE")
+    if not ignore then return end
+
+    for _, v in ipairs(ignore:GetDescendants()) do
+        if v:IsA("MeshPart") and v.Name == "Battery" then
+            table.insert(batteries, v)
+        end
+    end
+    if #batteries == 0 then return end
+
+    local char = player.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = batteries[batteryIndex].CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+    batteryIndex = batteryIndex % #batteries + 1
+end)
+
+-- ═══════════════════════════════════════
+-- OTHERS TAB
+-- ═══════════════════════════════════════
+misctab:Label("Miscellaneous Features")
+
+misctab:Button("Infinite Yield", "Load Infinite Yield admin script.", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end)
+
+-- ═══════════════════════════════════════
+-- INFO TAB
+-- ═══════════════════════════════════════
+helptab:Label("GUI Controls & Credits")
+helptab:Label("Show / Hide GUI: Right Alt")
+
+helptab:Button("Copy Owner Discord", function()
+    if setclipboard then setclipboard("ghostofcelleron") end
+    notify("Discord Username", "Copied to clipboard!")
+end)
+
+helptab:Button("Copy Discord Invite", function()
+    if setclipboard then setclipboard("https://discord.gg/8stFYxJv4R") end
+    notify("Discord Invite", "Copied to clipboard!")
+end)
